@@ -1,6 +1,6 @@
 [package]
 name = "tuimenu"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A configurable command-menu TUI with vi-style keys and status widgets"
 license = "Unlicense"
