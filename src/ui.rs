@@ -270,7 +270,7 @@ fn draw_help(f: &mut Frame, area: Rect) {
     ];
     let p = Paragraph::new(lines).block(
         Block::bordered()
-            .title(" Help ")
+            .title(format!(" tuimenu v{} — Help ", env!("CARGO_PKG_VERSION")))
             .border_style(Style::default().fg(Color::Cyan)),
     );
     f.render_widget(p, rect);
