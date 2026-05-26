@@ -3,6 +3,7 @@ name = "tuimenu"
 version = "0.1.0"
 edition = "2021"
 description = "A configurable command-menu TUI with vi-style keys and status widgets"
+license = "Unlicense"
 
 [dependencies]
 ratatui = "0.29"

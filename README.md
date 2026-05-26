@@ -109,6 +109,11 @@ To release a new version:
    git tag -a v0.0.2 -m "Version 0.0.2"
    ```
 
+## License
+
+This project is released into the public domain under [The Unlicense](LICENSE).
+You are free to use, copy, modify, and distribute it for any purpose, with no conditions.
+
 ## Smoke test
 
 Run without a terminal (useful for CI or verifying widget connectivity):
