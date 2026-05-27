@@ -64,10 +64,13 @@ pub fn fetch_btc(settings: &Settings) -> Option<String> {
     parse_btc(&json)
 }
 
+fn mem_gib(sys: &System) -> (f64, f64) {
+    (sys.used_memory() as f64 / GIB, sys.total_memory() as f64 / GIB)
+}
+
 pub fn memory_string(sys: &System) -> String {
-    let used = sys.used_memory() as f64 / GIB;
-    let total = sys.total_memory() as f64 / GIB;
-    format!("Mem {used:.1}/{total:.1} GB")
+    let (used, total) = mem_gib(sys);
+    format!("{used:.1}/{total:.1} GB")
 }
 
 pub fn short_hostname() -> String {
@@ -80,7 +83,8 @@ pub fn short_hostname() -> String {
 pub struct Widgets {
     pub hostname: String,
     sys: System,
-    memory: String,
+    mem_used: f64,  // GiB
+    mem_total: f64, // GiB
     last_mem: Instant,
     mem_interval: Duration,
     weather: Arc<Mutex<Option<String>>>,
@@ -91,7 +95,7 @@ impl Widgets {
     pub fn new(settings: &Settings) -> Widgets {
         let mut sys = System::new();
         sys.refresh_memory();
-        let memory = memory_string(&sys);
+        let (mem_used, mem_total) = mem_gib(&sys);
 
         let weather = Arc::new(Mutex::new(None));
         let btc = Arc::new(Mutex::new(None));
@@ -108,7 +112,8 @@ impl Widgets {
         Widgets {
             hostname: short_hostname(),
             sys,
-            memory,
+            mem_used,
+            mem_total,
             last_mem: Instant::now(),
             mem_interval: Duration::from_secs(settings.memory_refresh_secs.max(1)),
             weather,
@@ -120,13 +125,21 @@ impl Widgets {
     pub fn tick(&mut self) {
         if self.last_mem.elapsed() >= self.mem_interval {
             self.sys.refresh_memory();
-            self.memory = memory_string(&self.sys);
+            (self.mem_used, self.mem_total) = mem_gib(&self.sys);
             self.last_mem = Instant::now();
         }
     }
 
-    pub fn memory_str(&self) -> &str {
-        &self.memory
+    pub fn memory_str(&self) -> String {
+        format!("{:.1}/{:.1} GB", self.mem_used, self.mem_total)
+    }
+
+    pub fn memory_ratio(&self) -> f64 {
+        if self.mem_total == 0.0 {
+            0.0
+        } else {
+            (self.mem_used / self.mem_total).clamp(0.0, 1.0)
+        }
     }
 
     pub fn weather_str(&self) -> String {

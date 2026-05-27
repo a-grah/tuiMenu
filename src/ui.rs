@@ -47,14 +47,14 @@ fn draw_widgets(f: &mut Frame, area: Rect, widgets: &Widgets) {
     ])
     .split(area);
 
+    draw_memory(f, cols[0], widgets);
+
     let cell = |title: &'static str, value: String, color: Color| {
         Paragraph::new(value)
             .alignment(Alignment::Center)
             .style(Style::default().fg(color))
             .block(Block::bordered().title(title))
     };
-
-    f.render_widget(cell(" Mem Used ", widgets.memory_str().to_string(), Color::Green), cols[0]);
     f.render_widget(cell(" Bitcoin ", widgets.btc_str(), Color::Yellow), cols[1]);
     f.render_widget(cell(" Weather ", widgets.weather_str(), Color::Blue), cols[2]);
 }
@@ -274,6 +274,33 @@ fn draw_help(f: &mut Frame, area: Rect) {
             .border_style(Style::default().fg(Color::Cyan)),
     );
     f.render_widget(p, rect);
+}
+
+fn draw_memory(f: &mut Frame, area: Rect, widgets: &Widgets) {
+    let block = Block::bordered().title(" Mem Used ");
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let mem_str = widgets.memory_str();
+    let ratio = widgets.memory_ratio();
+    let bar_color = if ratio < 0.85 { Color::Cyan } else { Color::Red };
+
+    // Reserve space for " 12.3/16.0 GB" after the bar
+    let label_len = mem_str.len() as u16 + 1;
+    let bar_width = inner.width.saturating_sub(label_len) as usize;
+    let filled = (ratio * bar_width as f64).round() as usize;
+    let unfilled = bar_width.saturating_sub(filled);
+
+    let line = Line::from(vec![
+        Span::styled(
+            "█".repeat(filled),
+            Style::default().fg(bar_color).add_modifier(Modifier::DIM),
+        ),
+        Span::styled("░".repeat(unfilled), Style::default().fg(Color::DarkGray)),
+        Span::raw(" "),
+        Span::styled(mem_str, Style::default().fg(Color::Gray)),
+    ]);
+    f.render_widget(Paragraph::new(line), inner);
 }
 
 fn truncate(s: &str, max: usize) -> String {
