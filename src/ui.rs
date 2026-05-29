@@ -32,11 +32,19 @@ pub fn draw(f: &mut Frame, app: &mut App, widgets: &Widgets) {
 }
 
 fn draw_banner(f: &mut Frame, area: Rect, widgets: &Widgets) {
-    let p = Paragraph::new(widgets.hostname.clone())
+    let block = Block::bordered();
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    let host = Paragraph::new(widgets.hostname.clone())
         .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
-        .alignment(Alignment::Center)
-        .block(Block::bordered());
-    f.render_widget(p, area);
+        .alignment(Alignment::Center);
+    f.render_widget(host, inner);
+
+    let uptime = Paragraph::new(widgets.uptime_str())
+        .style(Style::default().fg(Color::DarkGray))
+        .alignment(Alignment::Right);
+    f.render_widget(uptime, inner);
 }
 
 fn draw_widgets(f: &mut Frame, area: Rect, widgets: &Widgets) {

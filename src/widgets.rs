@@ -73,6 +73,20 @@ pub fn memory_string(sys: &System) -> String {
     format!("{used:.1}/{total:.1} GB")
 }
 
+pub fn uptime_string() -> String {
+    let secs = System::uptime();
+    let days = secs / 86_400;
+    let hours = (secs % 86_400) / 3_600;
+    let mins = (secs % 3_600) / 60;
+    if days > 0 {
+        format!("up {days}d {hours}h")
+    } else if hours > 0 {
+        format!("up {hours}h {mins}m")
+    } else {
+        format!("up {mins}m")
+    }
+}
+
 pub fn short_hostname() -> String {
     System::host_name()
         .map(|h| h.split('.').next().unwrap_or(&h).to_string())
@@ -140,6 +154,10 @@ impl Widgets {
         } else {
             (self.mem_used / self.mem_total).clamp(0.0, 1.0)
         }
+    }
+
+    pub fn uptime_str(&self) -> String {
+        uptime_string()
     }
 
     pub fn weather_str(&self) -> String {
