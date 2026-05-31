@@ -43,6 +43,7 @@ cp target/release/tuimenu /usr/local/bin/
 | Key | Action |
 |-----|--------|
 | `j` / `k`, `↓` / `↑` | Move selection (skips headings) |
+| `J` / `K` | Reorder selected entry down / up |
 | `gg` / `G` | First / last entry |
 | `Ctrl-d` / `Ctrl-u` | Half page down / up |
 | `/` | Enter search mode (live filter) |

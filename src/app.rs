@@ -221,6 +221,24 @@ impl App {
         }
     }
 
+    /// Reorder the selected entry by swapping it with its neighbour in the
+    /// visible (filtered) list, then persist. The moved entry stays selected.
+    fn move_entry(&mut self, delta: isize) {
+        if self.filtered.is_empty() {
+            return;
+        }
+        let tgt = self.selected as isize + delta;
+        if tgt < 0 || tgt >= self.filtered.len() as isize {
+            return;
+        }
+        let from = self.filtered[self.selected];
+        let to = self.filtered[tgt as usize];
+        self.config.entries.swap(from, to);
+        self.persist();
+        self.recompute();
+        self.select_config_index(to);
+    }
+
     fn jump(&mut self, delta: isize, times: usize) {
         for _ in 0..times {
             let before = self.selected;
@@ -283,6 +301,8 @@ impl App {
         match key.code {
             KeyCode::Char('j') | KeyCode::Down => self.move_selection(1),
             KeyCode::Char('k') | KeyCode::Up => self.move_selection(-1),
+            KeyCode::Char('J') => self.move_entry(1),
+            KeyCode::Char('K') => self.move_entry(-1),
             KeyCode::Char('d') if ctrl => self.jump(1, 8),
             KeyCode::Char('u') if ctrl => self.jump(-1, 8),
             KeyCode::Char('g') => self.pending = Some('g'),
@@ -645,6 +665,31 @@ mod tests {
 
         let txt = std::fs::read_to_string(crate::config::config_path()).unwrap();
         assert!(txt.contains("[[entries]]"));
+    }
+
+    #[test]
+    fn move_entry_reorders_and_persists() {
+        isolate_home();
+        let mut app = App::new(sample());
+        // selection snaps onto apple (config idx 1)
+        assert_eq!(app.current_entry_index(), Some(1));
+
+        app.on_key(key('J')); // move down: apple swaps with apricot
+        assert_eq!(app.config.entries[1].name_str(), "apricot");
+        assert_eq!(app.config.entries[2].name_str(), "apple");
+        assert_eq!(app.current_entry_index(), Some(2)); // moved entry stays selected
+
+        app.on_key(key('K')); // move back up
+        assert_eq!(app.config.entries[1].name_str(), "apple");
+        assert_eq!(app.current_entry_index(), Some(1));
+
+        // at the top runnable row, moving up past the heading swaps with it
+        app.on_key(key('K'));
+        assert_eq!(app.config.entries[0].name_str(), "apple");
+        assert!(app.config.entries[1].is_heading());
+
+        let txt = std::fs::read_to_string(crate::config::config_path()).unwrap();
+        assert!(txt.contains("apple"));
     }
 
     #[test]

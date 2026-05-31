@@ -127,7 +127,7 @@ fn draw_footer(f: &mut Frame, area: Rect, app: &App) {
     } else {
         match app.mode {
             Mode::Normal => {
-                "j/k move · / search · Enter run · o new · c edit · dd del · ? help · q quit"
+                "j/k move · J/K reorder · / search · Enter run · o new · c edit · dd del · ? help · q quit"
                     .to_string()
             }
             Mode::Search => "type to filter · Enter accept · Esc clear".to_string(),
@@ -260,6 +260,7 @@ fn draw_help(f: &mut Frame, area: Rect) {
     let lines = vec![
         Line::from("Navigation"),
         Line::from("  j / k, ↓ / ↑    move (skips headings)"),
+        Line::from("  J / K           reorder entry down / up"),
         Line::from("  gg / G          first / last"),
         Line::from("  Ctrl-d / Ctrl-u half page"),
         Line::from(""),
