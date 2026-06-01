@@ -573,17 +573,47 @@ fn delete_last_word(s: &mut String) {
 }
 
 /// Run a shell command outside the alternate screen (called by main after teardown).
+///
+/// While the command runs, tuimenu ignores SIGINT/SIGQUIT (Ctrl-C / Ctrl-\) and
+/// resets them to their default in the child. The command shares tuimenu's
+/// process group, so the terminal delivers those signals to both; ignoring them
+/// here means interrupting a long-running command (e.g. `top`, `ping`) kills only
+/// the command and returns to the menu instead of taking tuimenu down with it.
 pub fn run_command_blocking(command: &str) -> Result<()> {
     use std::io::{self, BufRead, Write};
+    use std::os::unix::process::CommandExt;
     use std::process::Command;
 
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
     println!("\n$ {command}\n");
-    let _ = Command::new(shell).arg("-c").arg(command).status();
+    io::stdout().flush().ok();
+
+    // Ignore terminal signals in tuimenu for the duration of the command.
+    let prev_int = unsafe { libc::signal(libc::SIGINT, libc::SIG_IGN) };
+    let prev_quit = unsafe { libc::signal(libc::SIGQUIT, libc::SIG_IGN) };
+
+    let mut cmd = Command::new(shell);
+    cmd.arg("-c").arg(command);
+    unsafe {
+        // Restore default signal handling in the child so it stays interruptible.
+        cmd.pre_exec(|| {
+            libc::signal(libc::SIGINT, libc::SIG_DFL);
+            libc::signal(libc::SIGQUIT, libc::SIG_DFL);
+            Ok(())
+        });
+    }
+    let _ = cmd.status();
+
     print!("\nPress <Enter> to continue.");
     io::stdout().flush().ok();
     let mut line = String::new();
     io::stdin().lock().read_line(&mut line).ok();
+
+    // Restore tuimenu's original signal handling.
+    unsafe {
+        libc::signal(libc::SIGINT, prev_int);
+        libc::signal(libc::SIGQUIT, prev_quit);
+    }
     Ok(())
 }
 
